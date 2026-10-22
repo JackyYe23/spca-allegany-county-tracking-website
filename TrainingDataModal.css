@@ -1,0 +1,551 @@
+/* Keep text unbolded, including elements that are bold by default */
+strong,
+b,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: normal;
+  font-family: "Fredoka", sans-serif;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+  box-sizing: border-box;
+  overscroll-behavior: contain;
+}
+
+.modal {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 2rem;
+  position: relative;
+  width: 100%;
+  /* rem, not px, so the modal grows with the text on large screens */
+  max-width: 27.8rem;
+  box-sizing: border-box;
+  max-height: min(38.9rem, 90vh);
+  overflow-y: auto;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  font-family: "Inter", sans-serif;
+  overscroll-behavior: contain;
+}
+
+.close-button {
+  font-family: "Fredoka", sans-serif;
+  background: #eeeeee;
+  color: #333333;
+  font-weight: normal;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  cursor: pointer;
+}
+
+.modal h2 {
+  margin-top: 0;
+  text-align: center;
+}
+
+.name-fields {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.name-fields .input-clearable {
+  flex: 1 1 180px;
+}
+
+.name-input {
+  width: 100%;
+  padding: 0.6rem 2.1rem 0.6rem 0.9rem;
+  font-size: 1rem;
+  border: 2px solid #cccccc;
+  border-radius: 12px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.form-question {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-question label {
+  font-family: "Fredoka", sans-serif;
+  margin-bottom: 0.35rem;
+  font-weight: normal;
+  font-size: 0.95rem;
+}
+
+.form-question input[type="text"],
+.form-question input[type="date"],
+.form-question textarea {
+  padding: 0.6rem 0.9rem;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: 2px solid #cccccc;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.form-question textarea {
+  resize: none;
+  min-height: 100px;
+}
+
+.submit-area {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.submit-button {
+  font-family: "Fredoka", sans-serif;
+  background: #90a8ff;
+  color: #222222;
+  font-weight: normal;
+  padding: 0.7rem 2rem;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.submit-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.animal-search-wrapper {
+  position: relative;
+}
+
+.input-clearable {
+  position: relative;
+  display: block;
+}
+
+.input-clearable input,
+.input-clearable textarea {
+  width: 100%;
+  padding-right: 2.1rem;
+  box-sizing: border-box;
+}
+
+.clear-field-button {
+  font-family: "Fredoka", sans-serif;
+  position: absolute;
+  top: 0.55rem;
+  right: 0.5rem;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  border: none;
+  border-radius: 50%;
+  background: #e4e4e4;
+  color: #777777;
+  font-size: 0.85rem;
+  font-weight: normal;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 4px;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.input-clearable input ~ .clear-field-button {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.clear-field-button:hover {
+  background: #d0d0d0;
+  transform: scale(1.1);
+}
+
+.input-clearable input ~ .clear-field-button:hover {
+  transform: translateY(-50%) scale(1.1);
+}
+
+.clear-field-button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.suggestion-list {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: #ffffff;
+  border: 2px solid #cccccc;
+  border-radius: 12px;
+  max-height: 160px;
+  overflow-y: auto;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.suggestion-item {
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background-color: #f0eefe;
+}
+
+.suggestion-item-add {
+  font-family: "Fredoka", sans-serif;
+  font-weight: normal;
+  color: #5a4a8f;
+  border-top: 1px solid #eeeeee;
+}
+
+.dog-pill-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.dog-pill-card {
+  background: #f7f5ff;
+  border: 2px solid #cbbcff;
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+}
+
+.dog-pill-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.dog-pill-header strong {
+  flex: 1;
+}
+
+.dropdown-arrow {
+  transition: transform 0.2s ease;
+  font-size: 1rem;
+  color: #5a4a8f;
+}
+
+.dropdown-arrow-open {
+  transform: rotate(180deg);
+}
+
+.pill-remove-button {
+  font-family: "Fredoka", sans-serif;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  border: none;
+  border-radius: 50%;
+  background: #e4e4e4;
+  color: #777777;
+  font-size: 0.85rem;
+  font-weight: normal;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 4px;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.pill-remove-button:hover {
+  background: #d0d0d0;
+  transform: scale(1.1);
+}
+
+.dog-pill-body {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #cbbcff;
+  cursor: default;
+  animation: dogPillFadeIn 0.2s ease-in-out;
+}
+
+.dog-pill-notes-label {
+  font-family: "Fredoka", sans-serif;
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: normal;
+  font-size: 0.9rem;
+  color: #444444;
+}
+
+.dog-pill-body textarea {
+  padding: 0.6rem 0.9rem;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: 2px solid #cccccc;
+  font-family: inherit;
+  box-sizing: border-box;
+  resize: none;
+  min-height: 80px;
+}
+
+.dog-pill-time-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.dog-pill-field {
+  flex: 1 1 140px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dog-pill-field input[type="time"],
+.dog-pill-field input[type="number"] {
+  padding: 0.6rem 0.9rem;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: 2px solid #cccccc;
+  font-family: inherit;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.dog-pill-topic-wrapper {
+  position: relative;
+}
+
+.equipment-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  justify-content: start;
+  gap: 0.5rem 1.1rem;
+}
+
+.equipment-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.equipment-checkbox-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #d98a3d;
+  cursor: pointer;
+}
+
+.equipment-other-input {
+  margin-top: 0.6rem;
+}
+
+.equipment-other-input input[type="text"] {
+  padding: 0.6rem 0.9rem;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: 2px solid #cccccc;
+  font-family: inherit;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.dog-pill-grade-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.dog-pill-grade-slider {
+  flex: 1;
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(to right, #ff4d4d 0%, #ffa500 50%, #4caf50 100%);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.dog-pill-grade-slider::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(to right, #ff4d4d 0%, #ffa500 50%, #4caf50 100%);
+}
+
+.dog-pill-grade-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #5a4a8f;
+  margin-top: -5px;
+  cursor: pointer;
+}
+
+.dog-pill-grade-slider::-moz-range-track {
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(to right, #ff4d4d 0%, #ffa500 50%, #4caf50 100%);
+}
+
+.dog-pill-grade-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #5a4a8f;
+  cursor: pointer;
+}
+
+.dog-pill-grade-row input.dog-pill-grade-number {
+  width: 72px;
+  padding: 0.4rem 0.25rem;
+}
+
+.dog-pill-grade-number {
+  width: 72px;
+  flex-shrink: 0;
+  padding: 0.4rem 0.5rem;
+  font-size: 1rem;
+  border-radius: 10px;
+  border: 2px solid #cccccc;
+  text-align: center;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+@keyframes dogPillFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    padding: 1.25rem 1rem 1.5rem;
+  }
+
+  .modal h2 {
+    font-size: 1.3rem;
+  }
+
+  .name-fields .input-clearable,
+  .dog-pill-field {
+    flex: 1 1 100%;
+  }
+
+  .equipment-checkbox-grid {
+    gap: 0.5rem 0.8rem;
+  }
+
+  .submit-button {
+    width: 100%;
+  }
+}
+
+/* Required fields that are still empty after Submit is tried */
+.field-missing {
+  border: 2px solid #ff5252 !important;
+}
+
+/* Text boxes keep a fixed size */
+textarea {
+  resize: none;
+}
+
+/* L1 Enrichment topics, laid out in columns */
+.topic-checklist {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid #cccccc;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: left;
+}
+
+.topic-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.topic-check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #9fd3f5;
+  cursor: pointer;
+}
+
+/* Training fields shown inside a dog card when Training is checked */
+.training-inline {
+  margin-top: 0.25rem;
+}
+
+/* Training already logged today: shown as text, not editable */
+.training-readonly {
+  font-size: 1rem;
+  color: #2d2440;
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.training-readonly-row {
+  margin-bottom: 0.4rem;
+}
+
+.training-readonly-row strong {
+  font-weight: 500;
+}

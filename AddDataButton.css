@@ -1,0 +1,19 @@
+.add-data-button {
+  font-family: "Inter", sans-serif;
+  font-size: 1.3rem;
+  padding: 0.8rem 2rem;
+  background-color: #9fd3f5;
+  border: 2px solid black;
+  border-radius: 50px;
+  color: #222222;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  margin: 1.5rem auto;
+  display: block;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.add-data-button:hover {
+  background-color: #86c2ea;
+  transform: scale(1.05);
+}
