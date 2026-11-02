@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import "./TrainingDataModal.css";
-import EXAMPLE_DOGS from "./exampleDogs";
-import TRAINING_TOPICS from "./trainingTopics";
+import "../common/styles/TrainingDataModal.css";
+import EXAMPLE_DOGS from "../common/data/exampleDogs";
+import TRAINING_TOPICS from "../common/data/trainingTopics";
 
 // Checklist topics for each enrichment level, listed alphabetically
 const ENRICHMENT_CHECKLISTS = {
@@ -15,7 +15,7 @@ const ENRICHMENT_CHECKLISTS = {
   ],
   "L2 Enrichment": ["Puzzle toys", "Training"],
 };
-import EQUIPMENT_OPTIONS from "./equipmentOptions";
+import EQUIPMENT_OPTIONS from "../common/data/equipmentOptions";
 
 const DRAFT_KEY = "dogActivity.draft";
 
@@ -36,6 +36,14 @@ function getNowTime() {
 // A start time can't be later than the current time on today's session
 function isStartTimeInFuture(dog, sessionDate) {
   return sessionDate === getTodayISO() && (dog.startTime || "") > getNowTime();
+}
+
+function isEndTimeInFuture(dog, sessionDate) {
+  if (sessionDate !== getTodayISO() || !dog.startTime || dog.durationMinutes === "") return false;
+  const [hours, minutes] = dog.startTime.split(":").map(Number);
+  const endMinutes = hours * 60 + minutes + Number(dog.durationMinutes || 0);
+  const now = new Date();
+  return endMinutes > now.getHours() * 60 + now.getMinutes();
 }
 
 const TRAINING_SESSIONS_KEY = "trainingPage.sessions";
@@ -142,7 +150,8 @@ function isDogSessionComplete(dog, isWalk, hasChecklist) {
   return (
     (usesTrainingRecord ||
       ((dog.startTime || "").trim() &&
-        String(dog.durationMinutes ?? "").trim() !== "")) &&
+        String(dog.durationMinutes ?? "").trim() !== "" &&
+        (!dog.trainingDetails?.equipmentOtherChecked || (dog.trainingDetails?.equipmentOtherText || "").trim()))) &&
     (isWalk || hasTopic(dog, hasChecklist)) &&
     (!needsTraining || trainingIsFilled(dog.trainingDetails))
   );
@@ -310,7 +319,7 @@ function AddActivityModal({
   const isEnrichmentOpen =
     showEnrichmentLevels || isEnrichmentType(activityType);
   const isWalkTooShort = (dog) =>
-    isWalk &&
+    (dog.activityType || activityType) === "Walk" &&
     dog.durationMinutes !== "" &&
     Number(dog.durationMinutes) < WALK_MIN_MINUTES;
 
@@ -319,18 +328,22 @@ function AddActivityModal({
     trainerLastName.trim() &&
     selectedAnimals.length > 0 &&
     sessionDate.trim() &&
-    !selectedAnimals.some((dog) => isStartTimeInFuture(dog, sessionDate)) &&
-    selectedAnimals.every((dog) => isDogSessionComplete(dog, isWalk, hasChecklist)) &&
-    !selectedAnimals.some(isWalkTooShort);
+    !selectedAnimals.some((dog) => isStartTimeInFuture(dog, sessionDate) || isEndTimeInFuture(dog, sessionDate)) &&
+    selectedAnimals.every((dog) => {
+      const type = dog.activityType || "";
+      return type && isDogSessionComplete(dog, type === "Walk", Boolean(ENRICHMENT_CHECKLISTS[type]));
+    }) &&
+    !selectedAnimals.some((dog) => isWalkTooShort({ ...dog, activityType: dog.activityType }));
 
   // Empty required fields are highlighted once Submit has been tried
   const isMissing = (value) => String(value ?? "").trim() === "";
   const fieldClass = (isInvalid) =>
     showErrors && isInvalid ? " field-missing" : "";
   const dogIsIncomplete = (dog) =>
-    !isDogSessionComplete(dog, isWalk, hasChecklist) ||
+    !(dog.activityType || "") ||
+    !isDogSessionComplete(dog, dog.activityType === "Walk", Boolean(ENRICHMENT_CHECKLISTS[dog.activityType])) ||
     isWalkTooShort(dog) ||
-    isStartTimeInFuture(dog, sessionDate);
+    isStartTimeInFuture(dog, sessionDate) || isEndTimeInFuture(dog, sessionDate);
 
   const handleSubmitClick = () => {
     if (!canSubmit) {
@@ -537,8 +550,9 @@ function AddActivityModal({
           </div>
         </div>
 
+        <div className="activity-filter-row">
         <div className="form-question activity-area-field">
-          <label>Area</label>
+          <label>Filter by area</label>
           <select
             className={`activity-area-select${area ? "" : " is-placeholder"}`}
             value={area}
@@ -550,69 +564,6 @@ function AddActivityModal({
             <option value="Quarantine">Quarantine</option>
             <option value="Meet and Greet">Meet and Greet</option>
           </select>
-        </div>
-
-        <div className="form-question activity-type-field">
-          <div className="activity-type-buttons">
-            <button
-              type="button"
-              className={`activity-type-button${activityType === "Walk" ? " is-selected" : ""}`}
-              aria-pressed={activityType === "Walk"}
-              disabled={isSubmitting}
-              onClick={() => {
-                // Walk and Enrichment can be switched between, but only one is checked
-                setActivityType(activityType === "Walk" ? "" : "Walk");
-                setShowEnrichmentLevels(false);
-              }}
-            >
-              Walk
-            </button>
-            <button
-              type="button"
-              className={`activity-type-button${isEnrichmentOpen ? " is-selected" : ""}`}
-              aria-pressed={isEnrichmentOpen}
-              disabled={isSubmitting}
-              onClick={() => {
-                if (isEnrichmentType(activityType)) {
-                  // Clicking Enrichment again clears the chosen level
-                  setActivityType("");
-                  setShowEnrichmentLevels(false);
-                } else if (activityType === "Walk") {
-                  // Switching from Walk leaves the level to be picked
-                  setActivityType("");
-                  setShowEnrichmentLevels(true);
-                } else {
-                  setShowEnrichmentLevels((open) => !open);
-                }
-              }}
-            >
-              Enrichment
-            </button>
-          </div>
-
-          {isEnrichmentOpen && (
-            <div className="activity-type-buttons">
-              {ENRICHMENT_LEVELS.map((level) => {
-                const isOn = activityType === level.value;
-                return (
-                  <button
-                    key={level.value}
-                    type="button"
-                    className={`activity-type-button${isOn ? " is-selected" : ""}`}
-                    aria-pressed={isOn}
-                    disabled={isSubmitting}
-                    onClick={() => {
-                      // L1 and L2 can be switched between, but only one is checked
-                      setActivityType(isOn ? "" : level.value);
-                      setShowEnrichmentLevels(true);
-                    }}
-                  >
-                    {level.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         <div className="form-question animal-search-wrapper">
@@ -662,11 +613,16 @@ function AddActivityModal({
             </ul>
           )}
         </div>
+        </div>
 
         {selectedAnimals.length > 0 && (
           <div className="dog-pill-group">
             {selectedAnimals.map((dog) => {
               const isExpanded = expandedAnimalId === dog.id;
+              const dogActivityType = dog.activityType || "";
+              const isWalk = dogActivityType === "Walk";
+              const hasChecklist = Boolean(ENRICHMENT_CHECKLISTS[dogActivityType]);
+              const checklistTopics = ENRICHMENT_CHECKLISTS[dogActivityType] || [];
 
               return (
                 <div
@@ -690,7 +646,11 @@ function AddActivityModal({
                       ×
                     </button>
 
-                    <strong>{dog.name}</strong>
+                    <strong>
+                      {dog.name}
+                      {dogActivityType === "Walk" && " (Walk)"}
+                      {isEnrichmentType(dogActivityType) && ` (${dogActivityType.startsWith("L1") ? "L1" : "L2"})`}
+                    </strong>
 
                     <span
                       className={`dropdown-arrow ${
@@ -703,9 +663,23 @@ function AddActivityModal({
 
                   {isExpanded && (
                     <div
-                      className="dog-pill-body"
+                      className={`dog-pill-body${dogActivityType ? "" : " no-activity-type"}`}
                       onClick={(e) => e.stopPropagation()}
                     >
+                      <div className="form-question activity-type-field">
+                        <label className="dog-pill-notes-label">Activity type</label>
+                        <div className="activity-type-buttons">
+                          <button type="button" className={`activity-type-button${dogActivityType === "Walk" ? " is-selected" : ""}`} onClick={() => updateDog(dog.id, { activityType: dogActivityType === "Walk" ? "" : "Walk" })} disabled={isSubmitting}>Walk</button>
+                          <button type="button" className={`activity-type-button${isEnrichmentType(dogActivityType) ? " is-selected" : ""}`} onClick={() => updateDog(dog.id, { activityType: isEnrichmentType(dogActivityType) ? "" : "L1 Enrichment" })} disabled={isSubmitting}>Enrichment</button>
+                        </div>
+                        {isEnrichmentType(dogActivityType) && (
+                          <div className="activity-type-buttons">
+                            {ENRICHMENT_LEVELS.map((level) => (
+                              <button key={level.value} type="button" className={`activity-type-button${dogActivityType === level.value ? " is-selected" : ""}`} onClick={() => updateDog(dog.id, { activityType: dogActivityType === level.value ? "" : level.value })} disabled={isSubmitting}>{level.label}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       {!usesTrainingRecord(dog) && (
                       <div className="dog-pill-time-row">
                         <div className="dog-pill-field">
@@ -741,7 +715,7 @@ function AddActivityModal({
                             {...(isWalk ? {} : { max: "180" })}
                             step="1"
                             placeholder={isWalk ? "e.g. 30" : "e.g. 30 (max 180)"}
-                            className={fieldClass(isMissing(dog.durationMinutes) || isWalkTooShort(dog)).trim()}
+                            className={fieldClass(isMissing(dog.durationMinutes) || isWalkTooShort(dog) || isEndTimeInFuture(dog, sessionDate)).trim()}
                             value={dog.durationMinutes || ""}
                             onChange={(e) => {
                               const raw = e.target.value;
@@ -759,6 +733,9 @@ function AddActivityModal({
                             }}
                             disabled={isSubmitting}
                           />
+                          {isEndTimeInFuture(dog, sessionDate) && (
+                            <div className="duration-error">The end time can't be later than now</div>
+                          )}
                           {isWalkTooShort(dog) && (
                             <div className="duration-error">
                               Walks need to be at least {WALK_MIN_MINUTES} minutes.
@@ -766,7 +743,6 @@ function AddActivityModal({
                           )}
                         </div>
                       </div>
-
                       )}
 
                       {isWalk && (
@@ -909,10 +885,6 @@ function AddActivityModal({
                       {hasChecklist &&
                         (dog.topics || []).includes("Training") && (
                           <div className="training-inline">
-                            <label className="dog-pill-notes-label">
-                              Training details
-                            </label>
-
                             {trainingOf(dog).fromRecord ? (
                               <div className="training-readonly">
                                 <ReadOnlyRow label="Start time" value={trainingOf(dog).startTime} />
@@ -980,14 +952,16 @@ function AddActivityModal({
                                       const matchingTopics = TRAINING_TOPICS.filter(
                                         (topic) => !typed || topic.toLowerCase().includes(typed)
                                       );
-                                      if (matchingTopics.length === 0) return null;
+                                      const options = [...matchingTopics, "Other"];
+                                      if (options.length === 0) return null;
                                       return (
                                         <ul className="suggestion-list">
-                                          {matchingTopics.map((topic) => (
+                                          {options.map((topic) => (
                                             <li
                                               key={topic}
                                               className="suggestion-item"
-                                              onMouseDown={() => {
+                                              onMouseDown={(event) => {
+                                                event.preventDefault();
                                                 updateTrainingField(dog, "topic", topic);
                                                 setShowTopicSuggestions(false);
                                               }}
@@ -998,6 +972,17 @@ function AddActivityModal({
                                         </ul>
                                       );
                                     })()}
+                                  {trainingOf(dog).topic === "Other" && (
+                                    <input
+                                      type="text"
+                                      className="training-topic-other-input"
+                                      placeholder="What type of training?"
+                                      aria-label="Other training topic"
+                                      value={trainingOf(dog).topicOther || ""}
+                                      onChange={(e) => updateTrainingField(dog, "topicOther", e.target.value)}
+                                      disabled={isSubmitting}
+                                    />
+                                  )}
                                 </div>
 
                                 <div className="form-question">
@@ -1364,10 +1349,9 @@ function AddActivityModal({
             type="date"
             className={fieldClass(isMissing(sessionDate)).trim()}
             value={sessionDate}
-            min={getTodayISO()}
+            max={getTodayISO()}
             onChange={(e) => {
-              // Sessions can't be dated before today
-              if (e.target.value >= getTodayISO()) setSessionDate(e.target.value);
+              if (e.target.value <= getTodayISO()) setSessionDate(e.target.value);
             }}
             disabled={isSubmitting}
           />

@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import "./TrainingPage.css";
+import "../common/styles/TrainingPage.css";
 
 import AddActivityModal from "./AddActivityModal";
-import AddDataButton from "./AddDataButton";
-import EXAMPLE_DOGS from "./exampleDogs";
-import spcaLogo from "./assets/spca-logo.png";
+import AddDataButton from "../common/components/AddDataButton";
+import EXAMPLE_DOGS from "../common/data/exampleDogs";
+import spcaLogo from "../common/assets/spca-logo.png";
 
 const ACTIVITY_KEY = "dogActivity.entries";
 
@@ -250,6 +250,7 @@ function DogActivityPage({ onBack }) {
         <div className="training-log">
           {viewedActivities.map(({ entry, index }) => {
             const animal = entry.animals[0];
+            const activityType = animal.activityType || entry.activityType || "";
             const entryKey = `${entry.savedAt}-${index}`;
             const isExpanded = expandedKeys.includes(entryKey);
             const toggleEntry = () =>
@@ -259,11 +260,11 @@ function DogActivityPage({ onBack }) {
                   : [...keys, entryKey]
               );
 
-            const activityPhrase = !entry.activityType
+            const activityPhrase = !activityType
               ? "an activity"
-              : entry.activityType === "Walk"
+              : activityType === "Walk"
                 ? "a walk"
-                : `a ${entry.activityType}`;
+                : `a ${activityType}`;
             const when =
               entry.sessionDate === getTodayISO()
                 ? "today"
@@ -275,9 +276,9 @@ function DogActivityPage({ onBack }) {
               ? ` at ${formatTime12(animal.startTime)}`
               : "";
             // Enrichments name their level, e.g. "did a L1 enrichment at 14:30"
-            const isEnrichment = Boolean(entry.activityType?.endsWith("Enrichment"));
+            const isEnrichment = Boolean(activityType.endsWith("Enrichment"));
             const summaryText = isEnrichment
-              ? `${animal.name} did a ${entry.activityType.split(" ")[0]} enrichment${time}`
+              ? `${animal.name} did a ${activityType.split(" ")[0]} enrichment${time}`
               : `${animal.name} did ${activityPhrase} ${when}${time}`;
 
             return (
@@ -340,7 +341,7 @@ function DogActivityPage({ onBack }) {
                           .join(" · ")}
                       </div>
                     )}
-                    {entry.activityType === "Walk" && (
+                    {activityType === "Walk" && (
                       <>
                         <div className="activity-detail-row">
                           <strong>Did the dog poop?</strong>{" "}

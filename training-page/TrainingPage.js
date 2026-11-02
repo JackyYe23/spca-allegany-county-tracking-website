@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import "./TrainingPage.css";
+import "../common/styles/TrainingPage.css";
 
-import AddDataButton from "./AddDataButton";
+import AddDataButton from "../common/components/AddDataButton";
 import TrainingDataModal from "./TrainingDataModal";
-import spcaLogo from "./assets/spca-logo.png";
+import spcaLogo from "../common/assets/spca-logo.png";
 
 const MODAL_OPEN_KEY = "trainingPage.modalOpen";
 const SESSIONS_KEY = "trainingPage.sessions";
@@ -18,7 +18,10 @@ function loadSessions() {
 }
 
 function getTodayISO() {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
 }
 
 function shiftDateISO(iso, deltaDays) {
@@ -37,8 +40,8 @@ function formatDateISO(iso) {
   });
 }
 
-function AdditionalNotesDropdown({ notes, followUpNotes }) {
-  const [isOpen, setIsOpen] = useState(false);
+function AdditionalNotesDropdown({ notes, followUpNotes, defaultOpen = false }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   if (!notes && !followUpNotes) {
     return <div className="additional-notes-empty">No additional notes.</div>;
@@ -349,7 +352,35 @@ function TrainingPage({ onOpenDogActivity }) {
           </p>
         ) : (
           viewedSessions.map(({ session, index }) => (
-            <div className="training-log-entry" key={index}>
+            <div
+              className="training-log-entry training-log-entry-clickable"
+              key={index}
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                const animal = Array.isArray(session.animals) ? session.animals[0] : null;
+                setNotesPopup({
+                  title: animal?.name || "Session notes",
+                  notes: animal?.notes,
+                  grade: animal?.performanceGrade,
+                  followUpNotes: animal?.followUpNotes,
+                  startTime: animal?.startTime,
+                  durationMinutes: animal?.durationMinutes,
+                  topic: animal?.topic,
+                  topics: animal?.topics,
+                  equipment: animal?.equipment,
+                  equipmentOtherText: animal?.equipmentOtherText,
+                  showHistory: false,
+                  additionalOnly: true,
+                });
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  event.currentTarget.click();
+                }
+              }}
+            >
               <div className="training-log-entry-header">
                 <div className="training-log-entry-info">
                   <div className="training-log-entry-title">
@@ -383,14 +414,14 @@ function TrainingPage({ onOpenDogActivity }) {
                       <button
                         type="button"
                         className="training-log-edit-button"
-                        onClick={() => setEditingEntry({ session, index })}
+                        onClick={(event) => { event.stopPropagation(); setEditingEntry({ session, index }); }}
                       >
                         Edit
                       </button>
                       <button
                         type="button"
                         className="training-log-delete-button"
-                        onClick={() => handleDelete(index)}
+                        onClick={(event) => { event.stopPropagation(); handleDelete(index); }}
                       >
                         Delete
                       </button>
@@ -404,15 +435,23 @@ function TrainingPage({ onOpenDogActivity }) {
                             key={a.id}
                             type="button"
                             className="training-log-notes-button"
-                            onClick={() =>
+                            onClick={(event) => {
+                              event.stopPropagation();
                               setNotesPopup({
                                 title: a.name,
                                 notes: a.notes,
                                 grade: a.performanceGrade,
                                 followUpNotes: a.followUpNotes,
+                                startTime: a.startTime,
+                                durationMinutes: a.durationMinutes,
+                                topic: a.topic,
+                                topics: a.topics,
+                                equipment: a.equipment,
+                                equipmentOtherText: a.equipmentOtherText,
                                 dogName: a.name,
-                              })
-                            }
+                                showHistory: true,
+                              });
+                            }}
                           >
                             Show Notes
                           </button>
@@ -421,12 +460,14 @@ function TrainingPage({ onOpenDogActivity }) {
                           <button
                             type="button"
                             className="training-log-notes-button"
-                            onClick={() =>
+                            onClick={(event) => {
+                              event.stopPropagation();
                               setNotesPopup({
                                 title: "Session notes",
                                 notes: session.sessionNotes,
-                              })
-                            }
+                                showHistory: false,
+                              });
+                            }}
                           >
                             Show Notes
                           </button>
@@ -521,7 +562,7 @@ function TrainingPage({ onOpenDogActivity }) {
                 </div>
               </div>
 
-              <label>
+              <div className="all-data-date-filter">
                 <input
                   type="date"
                   aria-label="Filter by date"
@@ -529,17 +570,17 @@ function TrainingPage({ onOpenDogActivity }) {
                   max={todayISO}
                   onChange={(e) => setAllDataDateFilter(e.target.value)}
                 />
-              </label>
-
-              {allDataDateFilter && (
+                {allDataDateFilter && (
                 <button
                   type="button"
-                  className="dog-history-clear-filter"
+                  className="all-data-date-clear"
                   onClick={() => setAllDataDateFilter("")}
+                  aria-label="Clear date filter"
                 >
-                  Clear date
+                  ×
                 </button>
-              )}
+                )}
+              </div>
             </div>
 
             {allDataRecords.length === 0 ? (
@@ -583,6 +624,13 @@ function TrainingPage({ onOpenDogActivity }) {
                           Trainer: {session.trainerFirstName}{" "}
                           {session.trainerLastName}
                         </span>
+                        {(animal.startTime || animal.durationMinutes) && (
+                          <span className="training-log-entry-trainer">
+                            {animal.startTime && `Start: ${animal.startTime}`}
+                            {animal.startTime && animal.durationMinutes && " · "}
+                            {animal.durationMinutes && `Duration: ${animal.durationMinutes} min`}
+                          </span>
+                        )}
                       </span>
                       <span
                         className={`training-log-expand-arrow${isExpanded ? " open" : ""}`}
@@ -594,31 +642,13 @@ function TrainingPage({ onOpenDogActivity }) {
 
                     {isExpanded && (
                       <div className="training-log-entry-notes">
-                        {(animal.startTime || animal.durationMinutes) && (
-                          <div className="training-log-entry-times">
-                            {animal.startTime && (
-                              <div>
-                                <strong>Start:</strong> {animal.startTime}
-                              </div>
-                            )}
-                            {animal.durationMinutes && (
-                              <div>
-                                <strong>Duration:</strong>{" "}
-                                {animal.durationMinutes} min
-                              </div>
-                            )}
-                          </div>
+                        {animal.topic && <div><strong>Topic:</strong> {animal.topic}</div>}
+                        {(animal.equipment?.length || animal.equipmentOtherText) && (
+                          <div><strong>Tools used:</strong> {[...(animal.equipment || []), animal.equipmentOtherText].filter(Boolean).join(", ")}</div>
                         )}
-                        {animal.performanceGrade != null && (
-                          <div>
-                            <strong>Grade:</strong>{" "}
-                            {animal.performanceGrade}/100
-                          </div>
-                        )}
-                        <AdditionalNotesDropdown
-                          notes={animal.notes}
-                          followUpNotes={animal.followUpNotes}
-                        />
+                        {animal.performanceGrade != null && <div><strong>Grade:</strong> {animal.performanceGrade}/100</div>}
+                        <div><strong>Additional notes:</strong> {animal.notes || "None."}</div>
+                        <div><strong>Other things to work on:</strong> {animal.followUpNotes || "None."}</div>
                       </div>
                     )}
                   </div>
@@ -635,7 +665,7 @@ function TrainingPage({ onOpenDogActivity }) {
           onClick={() => setNotesPopup(null)}
         >
           <div
-            className="notes-popup"
+            className={`notes-popup${notesPopup.additionalOnly ? " notes-popup-compact" : ""}`}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -654,18 +684,36 @@ function TrainingPage({ onOpenDogActivity }) {
               </div>
             )}
 
-            <AdditionalNotesDropdown
-              notes={notesPopup.notes}
-              followUpNotes={notesPopup.followUpNotes}
-            />
+            <div className="additional-notes-content">
+              {
+                <>
+                  {notesPopup.startTime && <div><strong>Start:</strong> {notesPopup.startTime}</div>}
+                  {notesPopup.durationMinutes && <div><strong>Duration:</strong> {notesPopup.durationMinutes} min</div>}
+                  {(notesPopup.topics?.length || notesPopup.topic) && (
+                    <div><strong>Topic:</strong> {(notesPopup.topics?.length ? notesPopup.topics : [notesPopup.topic]).filter(Boolean).join(", ")}</div>
+                  )}
+                  {(notesPopup.equipment?.length || notesPopup.equipmentOtherText) && (
+                    <div><strong>Equipment:</strong> {[...(notesPopup.equipment || []), notesPopup.equipmentOtherText].filter(Boolean).join(", ")}</div>
+                  )}
+                </>
+              }
+              <div className="additional-notes-followup">
+                <strong>Additional notes:</strong>{" "}
+                {notesPopup.notes || "None."}
+              </div>
+              <div className="additional-notes-followup">
+                <strong>Other things to work on:</strong>{" "}
+                {notesPopup.followUpNotes || "None."}
+              </div>
+            </div>
 
-            {notesPopup.dogName && (
+            {notesPopup.showHistory && notesPopup.dogName && (
               <button
                 type="button"
                 className="notes-popup-history-button"
                 onClick={() => handleViewHistory(notesPopup.dogName)}
               >
-                View Training Records
+                Past Training Records
               </button>
             )}
           </div>
@@ -691,11 +739,11 @@ function TrainingPage({ onOpenDogActivity }) {
             </button>
 
             <h4 className="notes-popup-title">
-              {dogHistoryView.dogName}'s Training Records
+              {dogHistoryView.dogName}'s Past Training Records
             </h4>
 
             <div className="dog-history-filter-row">
-              <label>
+              <div className="all-data-date-filter">
                 <input
                   type="date"
                   aria-label="Filter by date"
@@ -703,17 +751,17 @@ function TrainingPage({ onOpenDogActivity }) {
                   max={todayISO}
                   onChange={(e) => setDogHistoryFilter(e.target.value)}
                 />
-              </label>
-
-              {dogHistoryFilter && (
+                {dogHistoryFilter && (
                 <button
                   type="button"
-                  className="dog-history-clear-filter"
+                  className="all-data-date-clear"
                   onClick={() => setDogHistoryFilter("")}
+                  aria-label="Clear date filter"
                 >
-                  Clear filter
+                  ×
                 </button>
-              )}
+                )}
+              </div>
             </div>
 
             {dogHistoryRecords.length === 0 ? (

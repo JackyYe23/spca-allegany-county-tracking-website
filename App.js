@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
-import DogActivityPage from "./DogActivityPage";
-import TrainingPage from "./TrainingPage";
+import DogActivityPage from "./dog-activity/DogActivityPage";
+import TrainingPage from "./training-page/TrainingPage";
 
 function App() {
   const [page, setPage] = useState("training");
