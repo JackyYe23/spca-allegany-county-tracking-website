@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import "./TrainingDataModal.css";
-import EXAMPLE_DOGS from "./exampleDogs";
-import TRAINING_TOPICS from "./trainingTopics";
-import EQUIPMENT_OPTIONS from "./equipmentOptions";
+import "../common/styles/TrainingDataModal.css";
+import EXAMPLE_DOGS from "../common/data/exampleDogs";
+import TRAINING_TOPICS from "../common/data/trainingTopics";
+import EQUIPMENT_OPTIONS from "../common/data/equipmentOptions";
 
 const DRAFT_KEY = "trainingPage.draft";
 
@@ -23,6 +23,14 @@ function getNowTime() {
 // A start time can't be later than the current time on today's session
 function isStartTimeInFuture(dog, sessionDate) {
   return sessionDate === getTodayISO() && (dog.startTime || "") > getNowTime();
+}
+
+function isEndTimeInFuture(dog, sessionDate) {
+  if (sessionDate !== getTodayISO() || !dog.startTime || dog.durationMinutes === "") return false;
+  const [hours, minutes] = dog.startTime.split(":").map(Number);
+  const endMinutes = hours * 60 + minutes + Number(dog.durationMinutes || 0);
+  const now = new Date();
+  return endMinutes > now.getHours() * 60 + now.getMinutes();
 }
 
 function loadDraft() {
@@ -54,7 +62,8 @@ function isDogSessionComplete(dog) {
   return (
     (dog.startTime || "").trim() &&
     String(dog.durationMinutes ?? "").trim() !== "" &&
-    (dog.topic || "").trim()
+    (dog.topic || "").trim() &&
+    (!dog.equipmentOtherChecked || (dog.equipmentOtherText || "").trim())
   );
 }
 
@@ -178,7 +187,7 @@ function TrainingDataModal({
     trainerLastName.trim() &&
     selectedAnimals.length > 0 &&
     sessionDate.trim() &&
-    !selectedAnimals.some((dog) => isStartTimeInFuture(dog, sessionDate)) &&
+    !selectedAnimals.some((dog) => isStartTimeInFuture(dog, sessionDate) || isEndTimeInFuture(dog, sessionDate)) &&
     selectedAnimals.every(isDogSessionComplete);
 
   // Empty required fields are highlighted once Submit has been tried
@@ -186,7 +195,7 @@ function TrainingDataModal({
   const fieldClass = (isInvalid) =>
     showErrors && isInvalid ? " field-missing" : "";
   const dogIsIncomplete = (dog) =>
-    !isDogSessionComplete(dog) || isStartTimeInFuture(dog, sessionDate);
+    !isDogSessionComplete(dog) || isStartTimeInFuture(dog, sessionDate) || isEndTimeInFuture(dog, sessionDate);
 
   const handleSubmitClick = () => {
     if (!canSubmit) {
@@ -317,6 +326,7 @@ function TrainingDataModal({
       trainerLastName: trainerLastName.trim(),
       animals: selectedAnimals.map((a) => ({
         ...a,
+        topic: a.topic === "Other" ? (a.topicOther || "Other").trim() : a.topic,
         equipmentOtherText: (a.equipmentOtherText || "").trim(),
         performanceGrade:
           a.performanceGrade === "" || a.performanceGrade == null
@@ -500,7 +510,7 @@ function TrainingDataModal({
                             max="180"
                             step="1"
                             placeholder="e.g. 30 (max 180)"
-                            className={fieldClass(isMissing(dog.durationMinutes)).trim()}
+                            className={fieldClass(isMissing(dog.durationMinutes) || isEndTimeInFuture(dog, sessionDate)).trim()}
                             value={dog.durationMinutes || ""}
                             onChange={(e) => {
                               const raw = e.target.value;
@@ -514,6 +524,9 @@ function TrainingDataModal({
                             }}
                             disabled={isSubmitting}
                           />
+                          {isEndTimeInFuture(dog, sessionDate) && (
+                            <div className="duration-error">The end time can't be later than now</div>
+                          )}
                         </div>
                       </div>
 
@@ -565,20 +578,22 @@ function TrainingDataModal({
                                 topic.toLowerCase().includes(trimmedTopic)
                             );
 
-                            if (matchingTopics.length === 0) return null;
+                            const options = [...matchingTopics, "Other"];
+                            if (options.length === 0) return null;
 
                             return (
                               <ul className="suggestion-list">
-                                {matchingTopics.map((topic) => (
+                                {options.map((topic) => (
                                   <li
                                     key={topic}
                                     className="suggestion-item"
-                                    onMouseDown={() => {
-                                      handleDogFieldChange(
-                                        dog.id,
-                                        "topic",
-                                        topic
-                                      );
+                                    onMouseDown={(event) => {
+                                      event.preventDefault();
+                                      if (topic === "Other") {
+                                        handleDogFieldChange(dog.id, "topic", "Other");
+                                      } else {
+                                        handleDogFieldChange(dog.id, "topic", topic);
+                                      }
                                       setShowTopicSuggestions(false);
                                     }}
                                   >
@@ -588,6 +603,17 @@ function TrainingDataModal({
                               </ul>
                             );
                           })()}
+                        {dog.topic === "Other" && (
+                          <input
+                            type="text"
+                            className="training-topic-other-input"
+                            placeholder="What type of training?"
+                            aria-label="Other training topic"
+                            value={dog.topicOther || ""}
+                            onChange={(e) => handleDogFieldChange(dog.id, "topicOther", e.target.value)}
+                            disabled={isSubmitting}
+                          />
+                        )}
                       </div>
 
                       {(dog.topic || "").trim() && (
@@ -634,6 +660,7 @@ function TrainingDataModal({
                               <input
                                 type="text"
                                 placeholder="Describe other tool..."
+                                className={fieldClass(dog.equipmentOtherChecked && isMissing(dog.equipmentOtherText)).trim()}
                                 value={dog.equipmentOtherText || ""}
                                 onChange={(e) =>
                                   handleDogFieldChange(
@@ -645,6 +672,9 @@ function TrainingDataModal({
                                 disabled={isSubmitting}
                                 autoComplete="off"
                               />
+                              {showErrors && isMissing(dog.equipmentOtherText) && (
+                                <div className="duration-error">Please specify the other tool</div>
+                              )}
                               {dog.equipmentOtherText && (
                                 <ClearFieldButton
                                   onClick={() =>
@@ -777,10 +807,9 @@ function TrainingDataModal({
             type="date"
             className={fieldClass(isMissing(sessionDate)).trim()}
             value={sessionDate}
-            min={getTodayISO()}
+            max={getTodayISO()}
             onChange={(e) => {
-              // Sessions can't be dated before today
-              if (e.target.value >= getTodayISO()) setSessionDate(e.target.value);
+              if (e.target.value <= getTodayISO()) setSessionDate(e.target.value);
             }}
             disabled={isSubmitting}
           />
