@@ -329,7 +329,8 @@ h6 {
 }
 
 .dog-pill-field input[type="time"],
-.dog-pill-field input[type="number"] {
+.dog-pill-field input[type="number"],
+.dog-pill-field input[type="text"][inputmode="numeric"] {
   padding: 0.6rem 0.9rem;
   font-size: 1rem;
   border-radius: 12px;
