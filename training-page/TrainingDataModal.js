@@ -135,6 +135,23 @@ function TrainingDataModal({
   const [showTopicSuggestions, setShowTopicSuggestions] = useState(false);
 
   const dogCardRefs = useRef({});
+  const topicSuggestionsTimeoutRef = useRef(null);
+
+  const openTopicSuggestions = () => {
+    clearTimeout(topicSuggestionsTimeoutRef.current);
+    setShowTopicSuggestions(true);
+  };
+  const closeTopicSuggestions = () => {
+    clearTimeout(topicSuggestionsTimeoutRef.current);
+    topicSuggestionsTimeoutRef.current = setTimeout(
+      () => setShowTopicSuggestions(false),
+      150
+    );
+  };
+  const hideTopicSuggestions = () => {
+    clearTimeout(topicSuggestionsTimeoutRef.current);
+    setShowTopicSuggestions(false);
+  };
 
   // Lock background page scroll while the modal is open, so any scroll
   // attempt (even over the dimmed overlay) only moves the modal's own
@@ -216,19 +233,6 @@ function TrainingDataModal({
     return dog.name.toLowerCase().includes(trimmedSearch.toLowerCase());
   });
 
-  const exactMatchExists =
-    trimmedSearch &&
-    EXAMPLE_DOGS.some(
-      (dog) => dog.name.toLowerCase() === trimmedSearch.toLowerCase()
-    );
-  const alreadySelectedMatch =
-    trimmedSearch &&
-    selectedAnimals.some(
-      (a) => a.name.toLowerCase() === trimmedSearch.toLowerCase()
-    );
-  const showAddCustomOption =
-    trimmedSearch && !exactMatchExists && !alreadySelectedMatch;
-
   const handleSelectDog = (dog) => {
     setSelectedAnimals([
       ...selectedAnimals,
@@ -245,25 +249,6 @@ function TrainingDataModal({
         notes: "",
       },
     ]);
-    setSearchTerm("");
-    setShowSuggestions(false);
-  };
-
-  const handleAddCustomDog = (name) => {
-    const newDog = {
-      id: `custom-${Date.now()}`,
-      name,
-      startTime: "",
-      durationMinutes: "",
-      topic: "",
-      equipment: [],
-      equipmentOtherChecked: false,
-      equipmentOtherText: "",
-      performanceGrade: 50,
-      followUpNotes: "",
-      notes: "",
-    };
-    setSelectedAnimals([...selectedAnimals, newDog]);
     setSearchTerm("");
     setShowSuggestions(false);
   };
@@ -352,7 +337,7 @@ function TrainingDataModal({
           <div className="input-clearable">
             <input
               type="text"
-              placeholder="Trainer First Name"
+              placeholder="First Name"
               className={`name-input${fieldClass(isMissing(trainerFirstName))}`}
               value={trainerFirstName}
               onChange={(e) => setTrainerFirstName(e.target.value)}
@@ -368,7 +353,7 @@ function TrainingDataModal({
           <div className="input-clearable">
             <input
               type="text"
-              placeholder="Trainer Last Name"
+              placeholder="Last Name"
               className={`name-input${fieldClass(isMissing(trainerLastName))}`}
               value={trainerLastName}
               onChange={(e) => setTrainerLastName(e.target.value)}
@@ -408,7 +393,7 @@ function TrainingDataModal({
             )}
           </div>
 
-          {showSuggestions && (matchingDogs.length > 0 || showAddCustomOption) && (
+          {showSuggestions && matchingDogs.length > 0 && (
             <ul className="suggestion-list">
               {matchingDogs.map((dog) => (
                 <li
@@ -419,15 +404,6 @@ function TrainingDataModal({
                   {dog.name}
                 </li>
               ))}
-
-              {showAddCustomOption && (
-                <li
-                  className="suggestion-item suggestion-item-add"
-                  onMouseDown={() => handleAddCustomDog(trimmedSearch)}
-                >
-                  + Add "{trimmedSearch}"
-                </li>
-              )}
             </ul>
           )}
         </div>
@@ -505,15 +481,14 @@ function TrainingDataModal({
                             Duration (minutes)
                           </label>
                           <input
-                            type="number"
-                            min="0"
-                            max="180"
-                            step="1"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             placeholder="e.g. 30 (max 180)"
                             className={fieldClass(isMissing(dog.durationMinutes) || isEndTimeInFuture(dog, sessionDate)).trim()}
                             value={dog.durationMinutes || ""}
                             onChange={(e) => {
-                              const raw = e.target.value;
+                              const raw = e.target.value.replace(/\D/g, "");
                               const clamped =
                                 raw === "" ? "" : Math.min(180, Math.max(0, Number(raw)));
                               handleDogFieldChange(
@@ -547,13 +522,8 @@ function TrainingDataModal({
                                 e.target.value
                               )
                             }
-                            onFocus={() => setShowTopicSuggestions(true)}
-                            onBlur={() =>
-                              setTimeout(
-                                () => setShowTopicSuggestions(false),
-                                150
-                              )
-                            }
+                            onFocus={openTopicSuggestions}
+                            onBlur={closeTopicSuggestions}
                             disabled={isSubmitting}
                             autoComplete="off"
                           />
@@ -594,7 +564,7 @@ function TrainingDataModal({
                                       } else {
                                         handleDogFieldChange(dog.id, "topic", topic);
                                       }
-                                      setShowTopicSuggestions(false);
+                                      hideTopicSuggestions();
                                     }}
                                   >
                                     {topic}

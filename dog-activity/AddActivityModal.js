@@ -19,6 +19,11 @@ import EQUIPMENT_OPTIONS from "../common/data/equipmentOptions";
 
 const DRAFT_KEY = "dogActivity.draft";
 
+function createActivityFormId() {
+  return globalThis.crypto?.randomUUID?.() ||
+    `activity-form-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function getTodayISO() {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -260,6 +265,23 @@ function AddActivityModal({
   const [showTopicSuggestions, setShowTopicSuggestions] = useState(false);
 
   const dogCardRefs = useRef({});
+  const topicSuggestionsTimeoutRef = useRef(null);
+
+  const openTopicSuggestions = () => {
+    clearTimeout(topicSuggestionsTimeoutRef.current);
+    setShowTopicSuggestions(true);
+  };
+  const closeTopicSuggestions = () => {
+    clearTimeout(topicSuggestionsTimeoutRef.current);
+    topicSuggestionsTimeoutRef.current = setTimeout(
+      () => setShowTopicSuggestions(false),
+      150
+    );
+  };
+  const hideTopicSuggestions = () => {
+    clearTimeout(topicSuggestionsTimeoutRef.current);
+    setShowTopicSuggestions(false);
+  };
 
   // Lock background page scroll while the modal is open, so any scroll
   // attempt (even over the dimmed overlay) only moves the modal's own
@@ -360,30 +382,17 @@ function AddActivityModal({
   // With no area chosen, every dog in the shelter can be picked
   const matchingDogs = EXAMPLE_DOGS.filter((dog) => {
     if (area && dog.location !== area) return false;
-    const alreadySelected = selectedAnimals.some((a) => a.id === dog.id);
-    if (alreadySelected) return false;
     if (!trimmedSearch) return true;
     return dog.name.toLowerCase().includes(trimmedSearch.toLowerCase());
   });
-
-  const exactMatchExists =
-    trimmedSearch &&
-    EXAMPLE_DOGS.some(
-      (dog) => dog.name.toLowerCase() === trimmedSearch.toLowerCase()
-    );
-  const alreadySelectedMatch =
-    trimmedSearch &&
-    selectedAnimals.some(
-      (a) => a.name.toLowerCase() === trimmedSearch.toLowerCase()
-    );
-  const showAddCustomOption =
-    trimmedSearch && !exactMatchExists && !alreadySelectedMatch;
 
   const handleSelectDog = (dog) => {
     setSelectedAnimals([
       ...selectedAnimals,
       {
         ...dog,
+        dogId: dog.id,
+        id: createActivityFormId(),
         startTime: "",
         durationMinutes: "",
         topic: "",
@@ -395,25 +404,6 @@ function AddActivityModal({
         notes: "",
       },
     ]);
-    setSearchTerm("");
-    setShowSuggestions(false);
-  };
-
-  const handleAddCustomDog = (name) => {
-    const newDog = {
-      id: `custom-${Date.now()}`,
-      name,
-      startTime: "",
-      durationMinutes: "",
-      topic: "",
-      equipment: [],
-      equipmentOtherChecked: false,
-      equipmentOtherText: "",
-      performanceGrade: 50,
-      followUpNotes: "",
-      notes: "",
-    };
-    setSelectedAnimals([...selectedAnimals, newDog]);
     setSearchTerm("");
     setShowSuggestions(false);
   };
@@ -552,14 +542,14 @@ function AddActivityModal({
 
         <div className="activity-filter-row">
         <div className="form-question activity-area-field">
-          <label>Filter by area</label>
+          <label>Area</label>
           <select
             className={`activity-area-select${area ? "" : " is-placeholder"}`}
             value={area}
             onChange={(e) => setArea(e.target.value)}
             disabled={isSubmitting}
           >
-            <option value="">Select an area to filter by...</option>
+            <option value="">All area</option>
             <option value="Adoption Wing">Adoption Wing</option>
             <option value="Quarantine">Quarantine</option>
             <option value="Meet and Greet">Meet and Greet</option>
@@ -568,12 +558,12 @@ function AddActivityModal({
 
         <div className="form-question animal-search-wrapper">
           <label>
-            Animals
+            Dogs
           </label>
           <div className="input-clearable">
             <input
               type="text"
-              placeholder="Search for a dog..."
+              placeholder="All dogs"
               className={fieldClass(selectedAnimals.length === 0).trim()}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -590,7 +580,7 @@ function AddActivityModal({
             )}
           </div>
 
-          {showSuggestions && (matchingDogs.length > 0 || showAddCustomOption) && (
+          {showSuggestions && matchingDogs.length > 0 && (
             <ul className="suggestion-list">
               {matchingDogs.map((dog) => (
                 <li
@@ -601,15 +591,6 @@ function AddActivityModal({
                   {dog.name}
                 </li>
               ))}
-
-              {showAddCustomOption && (
-                <li
-                  className="suggestion-item suggestion-item-add"
-                  onMouseDown={() => handleAddCustomDog(trimmedSearch)}
-                >
-                  + Add "{trimmedSearch}"
-                </li>
-              )}
             </ul>
           )}
         </div>
@@ -710,15 +691,14 @@ function AddActivityModal({
                             Duration (minutes)
                           </label>
                           <input
-                            type="number"
-                            min="0"
-                            {...(isWalk ? {} : { max: "180" })}
-                            step="1"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             placeholder={isWalk ? "e.g. 30" : "e.g. 30 (max 180)"}
                             className={fieldClass(isMissing(dog.durationMinutes) || isWalkTooShort(dog) || isEndTimeInFuture(dog, sessionDate)).trim()}
                             value={dog.durationMinutes || ""}
                             onChange={(e) => {
-                              const raw = e.target.value;
+                              const raw = e.target.value.replace(/\D/g, "");
                               const clamped =
                                 raw === ""
                                   ? ""
@@ -929,10 +909,8 @@ function AddActivityModal({
                                       onChange={(e) =>
                                         updateTrainingField(dog, "topic", e.target.value)
                                       }
-                                      onFocus={() => setShowTopicSuggestions(true)}
-                                      onBlur={() =>
-                                        setTimeout(() => setShowTopicSuggestions(false), 150)
-                                      }
+                                      onFocus={openTopicSuggestions}
+                                      onBlur={closeTopicSuggestions}
                                       disabled={isSubmitting}
                                       autoComplete="off"
                                     />
@@ -963,7 +941,7 @@ function AddActivityModal({
                                               onMouseDown={(event) => {
                                                 event.preventDefault();
                                                 updateTrainingField(dog, "topic", topic);
-                                                setShowTopicSuggestions(false);
+                                                hideTopicSuggestions();
                                               }}
                                             >
                                               {topic}
@@ -1067,13 +1045,8 @@ function AddActivityModal({
                                   e.target.value
                                 )
                               }
-                              onFocus={() => setShowTopicSuggestions(true)}
-                              onBlur={() =>
-                                setTimeout(
-                                  () => setShowTopicSuggestions(false),
-                                  150
-                                )
-                              }
+                              onFocus={openTopicSuggestions}
+                              onBlur={closeTopicSuggestions}
                               disabled={isSubmitting}
                               autoComplete="off"
                             />
@@ -1112,7 +1085,7 @@ function AddActivityModal({
                                           "topic",
                                           topic
                                         );
-                                        setShowTopicSuggestions(false);
+                                        hideTopicSuggestions();
                                       }}
                                     >
                                       {topic}
