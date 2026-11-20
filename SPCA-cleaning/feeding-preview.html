@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>12-cat feeding preview — SPCA</title>
+  <link rel="icon" href="assets/favicon.ico">
+  <link rel="preload" href="assets/fonts/fredoka-variable.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="styles.css?v=52">
+  <script src="care-model.js?v=52" defer></script>
+  <script src="feeding-preview.js?v=51" defer></script>
+  <script src="script.js?v=53" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#work-view">Skip to checklist</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <img src="assets/logo_top.png" alt="SPCA Serving Allegany County" class="header-logo" width="200" height="81">
+      <h1>Cat Care Checklist</h1>
+      <div class="version-switcher" role="group" aria-label="Design version">
+        <button type="button" id="design-v1" data-design="v1" aria-pressed="true" aria-label="Version 1: current workflow" title="Current workflow">V1</button>
+        <button type="button" id="design-v2" data-design="v2" aria-pressed="false" aria-label="Version 2: direct entry" title="Direct entry workflow">V2</button>
+        <button type="button" id="design-v3" data-design="v3" aria-pressed="false" aria-label="Version 3: feeding round" title="Feeding round workflow">V3</button>
+      </div>
+    </div>
+  </header>
+  <main class="main-content">
+    <div id="app" class="work-surface"></div>
+    <p id="storage-status" class="storage-status" role="status" aria-live="polite"></p>
+  </main>
+  <dialog id="pending-dialog" aria-labelledby="pending-title" aria-describedby="pending-list">
+    <div class="notice-heading"><h2 id="pending-title">Some entries still need details</h2><button type="button" id="pending-close" aria-label="Close notice">×</button></div>
+    <ul id="pending-list"></ul>
+  </dialog>
+  <footer class="site-footer">
+    <img src="assets/logo.png" alt="SPCA Serving Allegany County" width="200" height="200">
+    <p>SPCA Serving Allegany County · 5440 St Route 19, Belmont NY 14813 · 585-593-2200</p>
+  </footer>
+</body>
+</html>

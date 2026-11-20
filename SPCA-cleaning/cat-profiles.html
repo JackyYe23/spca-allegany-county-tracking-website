@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Individual cat observations, feeding exceptions, and weights for SPCA Serving Allegany County.">
+  <title>Cat Profiles — SPCA Serving Allegany County</title>
+  <link rel="icon" href="assets/favicon.ico">
+  <link rel="stylesheet" href="styles.css?v=52">
+  <link rel="stylesheet" href="cat-profiles.css?v=54">
+  <script src="care-model.js?v=52" defer></script>
+  <script src="cat-profiles.js?v=41" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#profiles">Skip to cat profiles</a>
+  <header class="site-header profiles-header">
+    <div class="header-inner">
+      <img src="assets/logo_top.png" alt="SPCA Serving Allegany County" class="header-logo" width="200" height="81">
+      <h1>Cat Profiles</h1>
+    </div>
+  </header>
+  <main class="main-content profiles-page" id="profiles" data-profile-layout="v2" tabindex="-1">
+    <p id="profile-notice" class="profile-notice" role="status" hidden></p>
+    <div class="profiles-layout">
+      <section class="profile-panel roster-panel" aria-labelledby="roster-title">
+        <div class="profile-heading">
+          <h2 id="roster-title">Find a cat</h2>
+          <button type="button" class="editor-action" id="add-cat" aria-expanded="false" aria-controls="profile-editor" disabled>Add cat <span class="draft-marker" role="img" aria-label="Draft" hidden></span></button>
+        </div>
+        <label class="field">Search by name or chip<input type="search" id="roster-search" autocomplete="off"></label>
+        <label class="field">Location<select id="roster-location"><option value="">All locations</option></select></label>
+        <ul class="cat-roster" id="cat-roster" aria-label="Cats"></ul>
+        <p id="roster-status" class="profile-muted" role="status">Loading cats…</p>
+      </section>
+      <div class="profile-content">
+        <section class="profile-panel" id="cat-profile" aria-label="Selected cat">
+          <p class="profile-muted" id="profile-empty">Choose a cat to see their care history or log an entry.</p>
+          <div id="cat-overview" hidden></div>
+        </section>
+        <section class="profile-panel profile-editor" id="profile-editor" aria-labelledby="editor-title" hidden>
+          <div class="profile-heading">
+            <h2 id="editor-title" tabindex="-1"></h2>
+            <button type="button" id="close-entry">Close</button>
+          </div>
+          <form id="profile-form"></form>
+        </section>
+        <div id="profile-history-slot">
+          <section class="profile-panel profile-history" id="profile-history" aria-labelledby="history-title" hidden>
+            <div class="profile-heading history-heading">
+              <h2 id="history-title">Care history</h2>
+              <button type="button" id="clear-history-date" hidden>Clear filters</button>
+              <div class="history-controls">
+                <div class="history-filter">
+                  <label class="field">Type<select id="history-kind"><option value="">All entries</option><option value="observation">Observations</option><option value="weight">Weights</option><option value="exception">Feeding exceptions</option></select></label>
+                  <label class="field">Date<input id="history-date" type="date"></label>
+                </div>
+              </div>
+            </div>
+            <p id="history-status" class="profile-muted" role="status"></p>
+            <ol id="history-entries" class="history-entries"></ol>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <img src="assets/logo.png" alt="SPCA Serving Allegany County" width="200" height="200">
+    <p>SPCA Serving Allegany County · 5440 St Route 19, Belmont NY 14813 · 585-593-2200</p>
+  </footer>
+  <template id="identity-fields">
+    <div class="profile-form-grid">
+      <label class="field">Cat name<input name="name" required maxlength="120"></label>
+      <label class="field">Location<input name="location" list="cat-locations" maxlength="120"></label>
+      <label class="field">Microchip<input name="chip" maxlength="80"></label>
+      <label class="field">Color<input name="color" maxlength="80"></label>
+      <label class="field">Sex<select name="sex"><option value="">Choose</option><option>Female</option><option>Male</option><option>Unknown</option></select></label>
+    </div>
+    <datalist id="cat-locations"></datalist>
+    <label class="field">Special diet<textarea name="diet" maxlength="500" rows="2"></textarea></label>
+    <label class="field">Medications<textarea name="medications" maxlength="1000" rows="2"></textarea></label>
+    <div class="profile-photo-field">
+      <img id="photo-preview" class="cat-photo" width="80" height="80" alt="">
+      <label class="field">Cat photo<input id="photo-input" type="file" accept="image/*"></label>
+      <button type="button" id="remove-photo" hidden>Remove photo</button>
+    </div>
+  </template>
+  <template id="entry-fields">
+    <div class="profile-form-grid entry-date-fields">
+      <label class="field">Your name<input name="recordedBy" required maxlength="120" autocomplete="name"></label>
+      <label class="field">Date<input type="date" name="date" required></label>
+      <label class="field">Shift<select name="shift" required><option>AM</option><option>PM</option></select></label>
+    </div>
+  </template>
+  <template id="weight-fields">
+    <section class="entry-panel" aria-labelledby="weight-heading">
+      <h3 class="entry-panel-heading" id="weight-heading">Weight</h3>
+      <div class="entry-panel-body profile-form-grid weight-fields">
+        <label class="field">Pounds<input name="pounds" type="number" min="0" max="100" step="1" inputmode="numeric" value="0" required></label>
+        <label class="field">Ounces<input name="ounces" type="number" min="0" max="15" step="1" inputmode="numeric" value="0" required></label>
+        <label class="field entry-full-width">Notes<textarea name="note" maxlength="2000" rows="2"></textarea></label>
+      </div>
+    </section>
+  </template>
+</body>
+</html>
